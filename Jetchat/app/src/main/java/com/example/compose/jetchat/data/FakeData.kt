@@ -28,6 +28,22 @@ import com.example.compose.jetchat.profile.ProfileScreenState
 
 val initialMessages = listOf(
     Message(
+        author = "me",
+        content = "One thing I keep coming back to with Compose is how much easier state management " +
+            "has become. In the old View world you'd have to manually sync your UI to the model " +
+            "(call setText, setVisibility, notifyDataSetChanged) and it was really easy to miss a " +
+            "spot and end up with stale UI. With Compose, you just describe what the UI should " +
+            "look like for a given state and the framework takes care of the rest.\n" +
+            "The mental shift to thinking in terms of unidirectional data flow took a bit of " +
+            "getting used to, but once it clicked everything felt a lot more predictable. " +
+            "ViewModel + StateFlow + collectAsStateWithLifecycle is my go-to pattern now. " +
+            "Recomposition is still something I have to reason about carefully — especially " +
+            "around derived state and lambdas capturing stale values — but the tooling keeps " +
+            "getting better. Layout Inspector showing recomposition counts has been a huge help " +
+            "for spotting unnecessary work.",
+        timestamp = "8:15 PM"
+    ),
+    Message(
         "me",
         "Check it out!",
         "8:07 PM",

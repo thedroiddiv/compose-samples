@@ -66,6 +66,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -83,8 +84,11 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.compose.jetchat.FunctionalityNotAvailablePopup
 import com.example.compose.jetchat.R
@@ -440,6 +444,7 @@ private fun AuthorNameTimestamp(msg: Message) {
 }
 
 private val ChatBubbleShape = RoundedCornerShape(4.dp, 20.dp, 20.dp, 20.dp)
+private const val MessageCollapsedMaxLines = 8
 
 @Composable
 fun DayHeader(dayString: String) {
@@ -516,23 +521,51 @@ fun ClickableMessage(message: Message, isUserMe: Boolean, authorClicked: (String
         primary = isUserMe,
     )
 
-    ClickableText(
-        text = styledMessage,
-        style = MaterialTheme.typography.bodyLarge.copy(color = LocalContentColor.current),
-        modifier = Modifier.padding(16.dp),
-        onClick = {
-            styledMessage
-                .getStringAnnotations(start = it, end = it)
-                .firstOrNull()
-                ?.let { annotation ->
-                    when (annotation.tag) {
-                        SymbolAnnotationType.LINK.name -> uriHandler.openUri(annotation.item)
-                        SymbolAnnotationType.PERSON.name -> authorClicked(annotation.item)
-                        else -> Unit
+    var isExpanded by rememberSaveable { mutableStateOf(false) }
+    var isOverflowing by remember { mutableStateOf(false) }
+
+    Column {
+        ClickableText(
+            text = styledMessage,
+            style = MaterialTheme.typography.bodyLarge.copy(color = LocalContentColor.current),
+            modifier = Modifier.padding(
+                start = 16.dp,
+                end = 16.dp,
+                top = 16.dp,
+                bottom = if (isOverflowing && !isExpanded) 4.dp else 16.dp,
+            ),
+            maxLines = if (isExpanded) Int.MAX_VALUE else MessageCollapsedMaxLines,
+            overflow = TextOverflow.Ellipsis,
+            onTextLayout = { isOverflowing = it.hasVisualOverflow },
+            onClick = {
+                styledMessage
+                    .getStringAnnotations(start = it, end = it)
+                    .firstOrNull()
+                    ?.let { annotation ->
+                        when (annotation.tag) {
+                            SymbolAnnotationType.LINK.name -> uriHandler.openUri(annotation.item)
+                            SymbolAnnotationType.PERSON.name -> authorClicked(annotation.item)
+                            else -> Unit
+                        }
                     }
-                }
-        },
-    )
+            },
+        )
+        if (isOverflowing && !isExpanded) {
+            Text(
+                text = stringResource(id = R.string.show_more),
+                style = MaterialTheme.typography.bodyMedium,
+                color = if (isUserMe) {
+                    MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f)
+                } else {
+                    MaterialTheme.colorScheme.primary
+                },
+                modifier = Modifier
+                    .padding(start = 16.dp, end = 16.dp, bottom = 16.dp)
+                    .clickable(role = Role.Button) { isExpanded = true },
+                textDecoration = TextDecoration.Underline
+            )
+        }
+    }
 }
 
 @Preview
